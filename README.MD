@@ -1,7 +1,13 @@
 ## Problem Overview
 Audio-Enhanced Conversational AI Chatbot
 
-> this project is a personal extension and adaptation of an original tutorial-based implementation by [shivan118](https://github.com/Shivan118/Audio-Enhanced-Conversational-AI-Chatbot-using-RAG)
+> this project is a personal extension and adaptation of an original tutorial-based implementation by [shivan118](https://github.com/Shivan118/Audio-Enhanced-Conversational-AI-Chatbot-using-RAG) with this new set of features:
+
+- Multilingual question answering (English, Spanish, Italian)
+- Modularized codebase
+- GUI more user centred
+
+---
 
 People often consume a wealth of information via videos, webinars, and podcasts but lack efficient ways to interact with or query specific information within these media. The challenge lies in converting long-form audio or video content into an interactive experience, allowing users to ask questions and retrieve precise information from the content without manually searching or listening through the entire file.
 
