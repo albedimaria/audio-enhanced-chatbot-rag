@@ -1,7 +1,9 @@
 ## Problem Overview
 Audio-Enhanced Conversational AI Chatbot
 
-> this project is a personal extension and adaptation of an original tutorial-based implementation by [shivan118](https://github.com/Shivan118/Audio-Enhanced-Conversational-AI-Chatbot-using-RAG) with this new set of features:
+> this project is a personal extension and adaptation of an original tutorial-based implementation by [shivan118](https://github.com/Shivan118/Audio-Enhanced-Conversational-AI-Chatbot-using-RAG) 
+
+The extended version provides:
 
 - Multilingual question answering (English, Spanish, Italian)
 - Modularized codebase
