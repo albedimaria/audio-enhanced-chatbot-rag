@@ -6,3 +6,7 @@
 .idea/
 
 AECAC/
+
+# Temporary folders
+temp/
+docs/
