@@ -86,7 +86,7 @@ if input_source:
                 # Add summary generation option
                 if st.button(summary_button):
                     with st.spinner("Generating summary..."):
-                        summary = generate_summary(transcription, language)
+                        summary = generate_summary(transcription, language, DEBUG_MODE)
                         st.subheader(ui_texts["summary"])
                         st.write(summary)
 
@@ -106,12 +106,13 @@ if input_source:
                     answer = result[RESULT_KEY]
                     st.success(answer)
                     
-                    # Find and display relevant timestamps
+                    # Find and display relevant timestamps (AssemblyAI returns milliseconds)
                     relevant_timestamps = find_relevant_timestamps(answer, word_timestamps)
                     if relevant_timestamps:
                         st.subheader(ui_texts["timestamps"])
-                        for timestamp in relevant_timestamps[:5]:  # Limit to top 5 timestamps
-                            st.write(f"{timestamp // 60}:{timestamp % 60:02d}")
+                        for timestamp_ms in relevant_timestamps[:5]:  # Limit to top 5 timestamps
+                            seconds = timestamp_ms // 1000
+                            st.write(f"{seconds // 60}:{seconds % 60:02d}")
             else:
                 st.error("QA system is not ready. Please make sure the transcription is completed.")
 
