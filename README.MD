@@ -1,52 +1,61 @@
-## Problem Overview
-Audio-Enhanced Conversational AI Chatbot
+# Audio-Enhanced Conversational AI Chatbot
 
-> this project is a personal extension and adaptation of an original tutorial-based implementation by [shivan118](https://github.com/Shivan118/Audio-Enhanced-Conversational-AI-Chatbot-using-RAG) 
-
-The extended version provides:
-
-- Multilingual question answering (English, Spanish, Italian)
-- Modularized codebase
-- GUI more user centred
+A Streamlit app that turns YouTube video (or audio) into an interactive Q&A experience: transcribe with AssemblyAI, then ask questions and get answers grounded in the content via RAG (LangChain + FAISS).
 
 ---
 
-People often consume a wealth of information via videos, webinars, and podcasts but lack efficient ways to interact with or query specific information within these media. The challenge lies in converting long-form audio or video content into an interactive experience, allowing users to ask questions and retrieve precise information from the content without manually searching or listening through the entire file.
+## Origin & Attribution
 
-### Problem Statement
-Develop a tool that transforms video or audio content into an interactive, conversational experience by transcribing audio, processing content for context, and providing accurate, real-time answers to user questions.
+This project is a **personal extension** of the tutorial-based implementation by [shivan118](https://github.com/Shivan118/Audio-Enhanced-Conversational-AI-Chatbot-using-RAG). The following additions and changes are my own:
 
-### Project Setup
+- **Multilingual support** — Full UI and Q&A in English, Spanish, and Italian; language detection for transcriptions
+- **Modular codebase** — Split into `app.py`, `stt_utils.py`, `qa_utils.py`, `language_config.py`, and `config.py` with shared paths and settings
+- **Improved UI** — Clear layout, sidebar language selector, and user-facing error messages
+- **Bug fixes & refactoring** — Correct DEBUG_MODE flow with mock data for cost-free testing; real RAG chain wired when not in debug; safe temp cleanup; timestamp display (ms → mm:ss); API key validation; centralized paths; stopword filtering for relevant timestamps; chunk overlap for better retrieval
 
-#### 1. Clone the Repository
+---
+
+## What It Does
+
+Transcribe audio from a YouTube URL (AssemblyAI), optionally summarize it (OpenAI), and answer questions over the transcript using a vector store (FAISS) and an LLM. Supports **debug mode** with mock transcription and summaries so the full flow can be tested without API calls.
+
+---
+
+## Setup
+
+### 1. Clone and enter the project
 ```bash
 git clone <repository-url>
 cd <project-folder>
 ```
 
-#### 2. Create a Virtual Environment
+### 2. Virtual environment (choose one)
 ```bash
-conda create -p env python=3.10 -y
-```
+# Option A: venv
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate   # macOS/Linux
 
-#### 3. Activate the Virtual Environment
-```bash
+# Option B: conda
+conda create -p env python=3.10 -y
 conda activate env/
 ```
 
-#### 4. Install Project Requirements
+### 3. Install dependencies
 ```bash
 pip install -r requirements_dev.txt
 ```
 
-#### 5. Environment Variables
-Create a .env file and add the required key-value pairs:
-```bash
-ASSEMBLY_AI_KEY = your_api_key
-OPENAI_API_KEY = your_secret_key
+### 4. Environment variables
+Create a `.env` file in the project root:
 ```
+ASSEMBLY_AI_KEY=your_assemblyai_key
+OPENAI_API_KEY=your_openai_key
+```
+Required only when **not** using debug mode. In debug mode the app uses mock data and no API keys.
 
-#### 6. How to Run the Project
+### 5. Run the app
 ```bash
 streamlit run app.py
 ```
+Open the URL shown in the terminal (e.g. http://localhost:8501). Set `DEBUG_MODE = True` in `app.py` to test without API costs.
