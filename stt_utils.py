@@ -6,7 +6,9 @@ from pathlib import Path
 import yt_dlp
 import logging
 import streamlit as st
-from language_config import LANGUAGE_NAME_MAP
+
+from config import TEMP_DIR, DOCS_DIR
+from language_config import get_language_display_name
 
 logger = logging.getLogger(__name__)
 base_url = "https://api.assemblyai.com/v2"
@@ -20,8 +22,7 @@ headers = {
 def save_audio(url):
     try:
         # Create temp directory if it doesn't exist
-        os.makedirs('temp', exist_ok=True)
-
+        TEMP_DIR.mkdir(parents=True, exist_ok=True)
         ydl_opts = {
             'format': 'bestaudio/best',
             'postprocessors': [{
@@ -29,7 +30,7 @@ def save_audio(url):
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',  # bitrate 192 kbps
             }],
-            'outtmpl': 'temp/%(id)s.%(ext)s',
+            'outtmpl': str(TEMP_DIR / '%(id)s.%(ext)s'),
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -95,11 +96,12 @@ MOCK_WORD_TIMESTAMPS = [
 def assemblyai_stt(audio_filename, DEBUG_MODE=False):
     if DEBUG_MODE:
         st.sidebar.info("Using mock transcription (no API call)")
+        cleanup_temp_files()
         return MOCK_TRANSCRIPTION, MOCK_WORD_TIMESTAMPS
 
     try:
-        audio_path = os.path.join('temp', audio_filename)
-        if not os.path.exists(audio_path):
+        audio_path = TEMP_DIR / audio_filename
+        if not audio_path.is_file():
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
         with open(audio_path, "rb") as f:
@@ -132,25 +134,31 @@ def assemblyai_stt(audio_filename, DEBUG_MODE=False):
         transcription_text = transcription_result['text']
         word_timestamps = transcription_result['words']
 
-        # show the available language if possible
+        # show the available language if possible (AssemblyAI may return en_us, en_uk, etc.)
         detected_lang = transcription_result.get('language_code', 'und')
-        detected_name = LANGUAGE_NAME_MAP.get(detected_lang, detected_lang)
+        detected_name = get_language_display_name(detected_lang)
         st.sidebar.info(f"Language detected: `{detected_name}`")
 
-        os.makedirs('docs', exist_ok=True)
-        with open('docs/transcription.txt', 'w') as file:
-            file.write(transcription_text)
-        with open('docs/word_timestamps.json', 'w') as file:
-            json.dump(word_timestamps, file)
+        DOCS_DIR.mkdir(parents=True, exist_ok=True)
+        (DOCS_DIR / "transcription.txt").write_text(transcription_text, encoding="utf-8")
+        with open(DOCS_DIR / "word_timestamps.json", "w", encoding="utf-8") as f:
+            json.dump(word_timestamps, f)
 
         logger.info("Successfully transcribed audio with word-level timestamps")
+        cleanup_temp_files()
         return transcription_text, word_timestamps
     except Exception as e:
         logger.error(f"Error in speech-to-text conversion: {str(e)}")
         st.error(f"Error in speech-to-text conversion: {str(e)}")
         return None, None
 
-# Cleanup temporary files
+# Cleanup temporary files (safe if temp/ does not exist)
 def cleanup_temp_files():
-    for file in os.listdir('temp'):
-        os.remove(os.path.join('temp', file))
+    if not TEMP_DIR.is_dir():
+        return
+    for file in TEMP_DIR.iterdir():
+        try:
+            if file.is_file():
+                file.unlink()
+        except OSError as e:
+            logger.warning(f"Could not remove {file}: {e}")

@@ -5,6 +5,10 @@
 
 .idea/
 
+# Virtual environment
+.venv/
+venv/
+
 AECAC/
 
 # Temporary folders

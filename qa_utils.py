@@ -1,16 +1,29 @@
 # qa_utils.py
 
 import json
-from langchain.document_loaders import TextLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import RetrievalQA, LLMChain
-from langchain.prompts import PromptTemplate
 import streamlit as st
+from langchain_community.document_loaders import TextLoader
+from langchain_community.vectorstores import FAISS
+from langchain.chains import RetrievalQA, LLMChain
+try:
+    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+except ImportError:
+    from langchain.chat_models import ChatOpenAI
+    from langchain.embeddings import OpenAIEmbeddings
+from langchain.prompts import PromptTemplate
+from langchain.text_splitter import CharacterTextSplitter
 
+from config import DOCS_DIR
 from language_config import ENG, ESP, ITA
+
+# Common stopwords to skip when matching answer words to timestamps (reduces noise)
+_STOPWORDS = frozenset({
+    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "must", "shall", "can", "need", "dare",
+    "to", "of", "in", "for", "on", "with", "at", "by", "from", "as",
+    "into", "through", "during", "before", "after", "above", "below",
+})
 
 class DummyChain:
     def __init__(self, language):
@@ -28,14 +41,14 @@ class DummyChain:
 @st.cache_resource
 def setup_qa_chain(language, DEBUG_MODE=False):
     if DEBUG_MODE:
-        # mock function empty dictionary
         return DummyChain(language), []
 
     try:
-        loader = TextLoader('docs/transcription.txt')
+        transcription_path = DOCS_DIR / "transcription.txt"
+        loader = TextLoader(str(transcription_path))
         documents = loader.load()
 
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         texts = text_splitter.split_documents(documents)
 
         embeddings = OpenAIEmbeddings()
@@ -52,8 +65,8 @@ def setup_qa_chain(language, DEBUG_MODE=False):
             return_source_documents=True
         )
 
-        with open('docs/word_timestamps.json', 'r') as file:
-            word_timestamps = json.load(file)
+        with open(DOCS_DIR / "word_timestamps.json", "r", encoding="utf-8") as f:
+            word_timestamps = json.load(f)
 
         return qa_chain, word_timestamps
 
@@ -62,13 +75,19 @@ def setup_qa_chain(language, DEBUG_MODE=False):
         return None, None
 
 
-# Function to find relevant timestamps
+# Function to find relevant timestamps (skips stopwords to reduce noise)
 def find_relevant_timestamps(answer, word_timestamps):
+    if not word_timestamps:
+        return []
+    answer_words = {w.strip(".,;:?!").lower() for w in answer.split()}
+    answer_words -= _STOPWORDS
+    if not answer_words:
+        return []
     relevant_timestamps = []
-    answer_words = answer.lower().split()
     for word_info in word_timestamps:
-        if word_info['text'].lower() in answer_words:
-            relevant_timestamps.append(word_info['start'])
+        word = word_info.get("text", "").strip(".,;:?!").lower()
+        if word and word in answer_words:
+            relevant_timestamps.append(word_info["start"])
     return relevant_timestamps
 
 
